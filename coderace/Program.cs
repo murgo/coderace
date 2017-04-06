@@ -93,7 +93,7 @@ namespace Client
             // throttling
             var throttle = 0.1;
 
-            if (_lastVelocities.Count == 10 && _lastVelocities.All(v => v < 0.5)) {
+            if (_lastVelocities.Count >= 10 && _lastVelocities.All(v => v < 0.5)) {
                 // panic
                 _panicModeStartFrame = sensory.RaceTick; 
             }
@@ -101,14 +101,15 @@ namespace Client
             if (_panicModeStartFrame > 0) {
                 Console.WriteLine("PANIC");
                 action.reverse = true;
-                if (sensory.RaceTick - _panicModeStartFrame > 100) {
+                if (sensory.RaceTick - _panicModeStartFrame > 10) {
                     _panicModeStartFrame = -1;
                 }
-                throttle = 1;
+                throttle = 0.3;
+                action.steer = 0;
             }
             else {
                 if (sensory.nextCornerWaypointDistance > 30 && -0.3 < sensory.nextCornerWaypointDirection && sensory.nextCornerWaypointDirection > 0.3) {
-                    throttle = 0.9;
+                    throttle = 0.5;
                 } else {
                     throttle = 0.1;
                 }
@@ -125,6 +126,7 @@ namespace Client
 //                action.steer = 1;
 //            }
 
+            Console.WriteLine($"Steer: {action.steer}, Throttle: {action.throttle}, Reverse: {action.reverse}");
             return action;
         }        
 
