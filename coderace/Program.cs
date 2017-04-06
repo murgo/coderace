@@ -60,9 +60,6 @@ namespace Client
                     }
                 });                
             };
-
-            Console.WriteLine("Press key to exit");
-            Console.ReadKey();            
         }
 
         private static List<double> _lastVelocities = new List<double>();
@@ -99,7 +96,7 @@ namespace Client
             }
 
             if (_panicModeStartFrame > 0) {
-                Console.WriteLine("PANIC");
+                Console.WriteLine("PANIC, let's reverse");
                 action.reverse = true;
                 if (sensory.RaceTick - _panicModeStartFrame > 10) {
                     _panicModeStartFrame = -1;
@@ -119,12 +116,6 @@ namespace Client
                 _lastVelocities.RemoveAt(0);
             
             action.throttle = throttle;
-
-//            if (sensory.nextWaypointDirection < 0) {
-//                action.steer = -1;
-//            } else if (sensory.nextWaypointDirection > 0) {
-//                action.steer = 1;
-//            }
 
             Console.WriteLine($"Steer: {action.steer}, Throttle: {action.throttle}, Reverse: {action.reverse}");
             return action;
