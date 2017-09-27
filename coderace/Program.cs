@@ -1,4 +1,4 @@
-﻿using System;
+﻿    using System;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -15,7 +15,7 @@ namespace Client
     {        
         public const string API_KEY = "E35413DE-47E0-4761-8D2D-F84E3F499187";
 
-        public const int TICK_INTERVAL = 200;
+        public const int TICK_INTERVAL = 100;
 
         private static int m_CurrentRaceId;
         private static int m_CurrentRaceTick;
@@ -53,7 +53,7 @@ namespace Client
                         }
                     }
 
-                    if (validPacket)
+                    if (validPacket && response.RaceId > 2895)
                     {
                         var action = PlayerUpdate(response);
                         lock (m_StateLock) { m_NextAction = action; }
@@ -85,7 +85,7 @@ namespace Client
 
             var velocity = Math.Sqrt(Math.Abs(sensory.Velocity.X) * Math.Abs(sensory.Velocity.X) + Math.Abs(sensory.Velocity.Y) * Math.Abs(sensory.Velocity.Y));
             _lastVelocities.Add(velocity);
-            Console.WriteLine($"vel: {velocity} next dir: {sensory.nextWaypointDirection}");
+            Console.WriteLine($"vel: {velocity} next dir: {sensory.nextWaypointDirection}, front slip: {sensory.FrontSlipAngle}, back slip: {sensory.RearSlipAngle}");
 
             // throttling
             var throttle = 0.1;
@@ -104,20 +104,34 @@ namespace Client
                 throttle = 0.3;
                 action.steer = 0;
             }
+            else if (velocity > 4 && (Math.Abs(sensory.RearSlipAngle) > 4 || Math.Abs(sensory.FrontSlipAngle) > 4.5)) {
+                Console.WriteLine("STEERING PANIC");
+                action.brake = 0.8;
+                action.steer = action.steer < 0 ? -0.8 : 0.8; 
+            }
             else {
-                if (sensory.nextCornerWaypointDistance > 30 && -0.3 < sensory.nextCornerWaypointDirection && sensory.nextCornerWaypointDirection > 0.3) {
-                    throttle = 0.5;
+                if (velocity < 1) {
+                    throttle = 1;
                 } else {
-                    throttle = 0.1;
+                    if (sensory.nextCornerWaypointDistance > 30 && Math.Abs(sensory.nextCornerWaypointDirection) < 1) {
+                            throttle = 0.6;
+                    } else {
+                        throttle = 0.1;
+                    }
                 }
             }
+
+            //if (sensory.nextCornerWaypointDistance < 3 && velocity > 4) {
+              //  Console.WriteLine("Uh oh gonna brake");
+                //action.brake = 0.2;
+           // }
             
             if (_lastVelocities.Count > 10)
                 _lastVelocities.RemoveAt(0);
             
             action.throttle = throttle;
 
-            Console.WriteLine($"Steer: {action.steer}, Throttle: {action.throttle}, Reverse: {action.reverse}");
+            Console.WriteLine($"Steer: {action.steer}, Throttle: {action.throttle}, Reverse: {action.reverse}, Brake: {action.brake}");
             return action;
         }        
 
